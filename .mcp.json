@@ -2,10 +2,10 @@
   "mcpServers": {
     "slate": {
       "type": "stdio",
-      "command": "npx",
+      "command": "node",
       "args": [
-        "tsx",
-        "/home/jayson2013/桌面/slate/src/index.ts"
+        "/home/jayson2013/桌面/slate/dist/index.js",
+        "mcp"
       ],
       "env": {}
     }
