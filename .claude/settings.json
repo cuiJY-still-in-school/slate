@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__slate__slate_search",
+      "mcp__slate__slate_read",
+      "mcp__slate__slate_write",
+      "mcp__slate__slate_claim",
+      "mcp__slate__slate_publish"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node dist/hooks/resolve.js"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node dist/hooks/capture.js"
+          }
+        ]
+      }
+    ]
+  }
+}

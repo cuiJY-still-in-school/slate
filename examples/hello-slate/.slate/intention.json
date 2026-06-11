@@ -1,0 +1,9 @@
+{
+  "igniter": "slate-protocol",
+  "proof_file": "ignition/sketch.png",
+  "proof_hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "summary": "一个根据天空颜色推荐俳句的 Web App —— 石板协议示范意图",
+  "status": "open",
+  "claimed_by": null,
+  "completion_pr": null
+}

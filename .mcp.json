@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "slate": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "tsx",
+        "/home/jayson2013/桌面/slate/src/index.ts"
+      ],
+      "env": {}
+    }
+  }
+}

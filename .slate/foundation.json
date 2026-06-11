@@ -1,0 +1,13 @@
+{
+  "architect": "cuiJY-still-in-school",
+  "name": "石板协议 MCP Server",
+  "description": "石板协议 MCP Server：5个AI工具实现全球人-AI协作网络。slate_search 搜索意图/地基，slate_read 读取协议，slate_write 写入协议，slate_claim 认领意图，slate_publish 发布。技术栈: TypeScript, Node.js, MCP SDK, GitHub API",
+  "version": "0.1.0",
+  "exports": [
+    "slate_search",
+    "slate_read",
+    "slate_write",
+    "slate_claim",
+    "slate_publish"
+  ]
+}
