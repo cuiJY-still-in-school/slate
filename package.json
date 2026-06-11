@@ -1,7 +1,7 @@
 {
   "name": "@slate-protocol/slate",
   "version": "0.1.0",
-  "description": "石板 — 开放、零信任、以 Git 为唯一真相源的人-AI 共创协议",
+  "description": "石板 — 开放、零信任、以 Git 为唯一真相源的人-AI 共创协议。MCP Server + 5 个 AI 工具实现全球协作网络。",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -10,21 +10,38 @@
   "files": [
     "dist",
     "spec",
-    "CLAUDE.md"
+    "CLAUDE.md",
+    "README.md"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuiJY-still-in-school/slate.git"
+  },
+  "homepage": "https://github.com/cuiJY-still-in-school/slate#readme",
+  "bugs": {
+    "url": "https://github.com/cuiJY-still-in-school/slate/issues"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "slate",
     "mcp",
+    "mcp-server",
     "ai",
     "collaboration",
     "protocol",
-    "vibecoding"
+    "vibecoding",
+    "claude-code",
+    "model-context-protocol"
   ],
   "license": "MIT",
   "dependencies": {
