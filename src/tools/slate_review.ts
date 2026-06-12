@@ -1,130 +1,96 @@
 /**
- * slate_review — 深度分析仓库/包的质量
+ * slate_review — 深度质量分析
  *
- * 读 GitHub Issues（人类写的评论）、commit 活跃度、npm 下载量、
- * README、代码注释——把程序员的所有非正式文本都作为评价信号。
+ * 读取 GitHub Issues（真实程序员评价）、commit 活跃度、
+ * license、开源健康度，提炼适用场景和已知坑。
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getRepoActivity, enrichQuality, analyzeSuitability, type SearchResult } from "../github/index.js";
 
-function formatReview(result: SearchResult, activity: Awaited<ReturnType<typeof getRepoActivity>>): string {
-  const name = result.repo;
-
+function formatReview(r: SearchResult, activity: Awaited<ReturnType<typeof getRepoActivity>>): string {
+  const score = r.qualityScore || 50;
+  const stars = r.stars ? `⭐${r.stars}` : "";
   const lines = [
-    `# 📋 质量评估: ${name}`,
+    `# 📋 ${r.repo}`,
     ``,
-    `**描述**: ${result.description || "无"}`,
-    `**评分**: ${"⭐".repeat(Math.round((result.qualityScore || 50) / 20))} (${result.qualityScore || "?"}/100)`,
+    r.description ? `> ${r.description}` : "",
+    ``,
+    `## 质量评分: ${"⭐".repeat(Math.round(score / 20))} ${score}/100 ${stars}`,
     ``,
   ];
 
-  if (result.license) lines.push(`**许可证**: ${result.license}`);
-  if (result.lastCommitAt) lines.push(`**最近推送**: ${result.lastCommitAt}`);
-  if (result.npmDownloads) lines.push(`**月下载量**: ${result.npmDownloads.toLocaleString()}`);
+  if (r.license) lines.push(`📜 ${r.license}`);
+  if (r.lastCommitAt) lines.push(`🕐 最近推送: ${r.lastCommitAt.slice(0, 10)}`);
+  lines.push("");
+
+  if (r.suitableFor?.length) {
+    lines.push("## ✅ 适合做什么");
+    for (const s of r.suitableFor) lines.push(`- ${s}`);
+    lines.push("");
+  }
+  if (r.painPoints?.length) {
+    lines.push("## ⚠️ 注意事项");
+    for (const p of r.painPoints) lines.push(`- ${p}`);
+    lines.push("");
+  }
 
   if (activity) {
+    const icon = activity.healthLabel === "healthy" ? "🟢" : activity.healthLabel === "moderate" ? "🟡" : activity.healthLabel === "neglected" ? "🔴" : "⚪";
+    lines.push("## 社区健康度");
+    lines.push(`- Open Issues: ${activity.openIssues} | 已关闭: ${activity.closedIssues} | PRs: ${activity.openPRs}`);
+    lines.push(`- 状态: ${icon} ${activity.healthLabel}`);
     lines.push("");
-    lines.push("## 社区活跃度");
-    lines.push(`- Open Issues: ${activity.openIssues}`);
-    lines.push(`- 已关闭 Issues: ${activity.closedIssues}`);
-    lines.push(`- 开放 PRs: ${activity.openPRs}`);
-    const healthEmoji = activity.healthLabel === "healthy" ? "🟢" :
-      activity.healthLabel === "moderate" ? "🟡" : activity.healthLabel === "neglected" ? "🔴" : "⚪";
-    lines.push(`- 健康度: ${healthEmoji} ${activity.healthLabel}`);
 
     if (activity.recentIssueTitles.length > 0) {
+      lines.push("## 最近 Issues");
+      for (const t of activity.recentIssueTitles.slice(0, 5)) lines.push(`- "${t}"`);
       lines.push("");
-      lines.push("## 最近 Issues（程序员写的真实评价）");
-      for (const title of activity.recentIssueTitles) {
-        lines.push(`- "${title}"`);
-      }
+      lines.push("> Issues 是最真实的代码评价——每个 issue 都是开发者踩过的坑。");
       lines.push("");
-      lines.push("> Issues 是最真实的代码评价——每个 issue 都是程序员在生产环境中遇到的问题。");
     }
   }
 
-  // 适合做什么
-  if (result.suitableFor?.length) {
-    lines.push("");
-    lines.push("## ✅ 适合做什么");
-    for (const s of result.suitableFor) lines.push(`- ${s}`);
-  }
-  if (result.painPoints?.length) {
-    lines.push("");
-    lines.push("## ⚠️ 注意事项");
-    for (const p of result.painPoints) lines.push(`- ${p}`);
-  }
+  if (score >= 80) lines.push("✅ **推荐使用** — 高质量，活跃维护，社区健康。");
+  else if (score >= 50) lines.push("⚠️ **可用但注意** — 检查最近的 issues 是否有阻塞性 bug。");
+  else if (score >= 30) lines.push("🔴 **谨慎** — 不太活跃或 issue 堆积。考虑替代方案。");
+  else lines.push("❌ **不建议** — 质量信号弱。");
 
-  // 综合建议
-  lines.push("");
-  lines.push("## 建议");
-  const score = result.qualityScore || 50;
-  if (score >= 80) {
-    lines.push("✅ **推荐使用** — 高质量，活跃维护，社区健康。");
-  } else if (score >= 50) {
-    lines.push("⚠️ **可以使用但注意** — 质量中等，检查最近的 issues 是否有阻塞性问题。");
-  } else if (score >= 30) {
-    lines.push("🔴 **谨慎使用** — 项目不太活跃或 issue 堆积较多。");
-  } else {
-    lines.push("❌ **不建议使用** — 质量信号弱。考虑寻找替代方案。");
-  }
-
-  return lines.join("\n");
+  return lines.filter(l => l !== undefined).join("\n");
 }
 
 export function registerSlateReview(server: McpServer): void {
   server.tool(
     "slate_review",
-    `Deep quality assessment of a GitHub repository or npm package.
+    `Deep quality assessment of a GitHub repository.
 
-Analyzes: GitHub Issues (real programmer feedback), commit activity,
-open/closed issue ratio, PR health, npm download counts, license,
-and overall project health.
+WHAT IT ANALYZES:
+- GitHub Issues: open/closed ratio, recent issue titles (real programmer feedback)
+- Activity: last commit date, release frequency
+- Community: PR health, maintainer responsiveness
+- Quality: license, documentation signals
+- Suitability: what the project is good for (extracted from topics, issues, README)
+- Pain points: known problems (extracted from issue complaints)
 
-Issue titles and comments are treated as the most authentic form of code review —
-they represent real problems encountered by real developers in production.
+WHEN TO USE: After slate_search returns results. Call this on the top result(s)
+to decide whether a foundation is high-quality enough to depend on.
 
-Use this tool AFTER slate_search to evaluate whether a foundation is
-high-quality enough to depend on.`,
+The output includes a clear recommendation: ✅ use / ⚠️ caution / 🔴 avoid.`,
     {
-      repo: z.string().describe("Repository 'owner/name' or npm package name to review"),
-      source: z.enum(["github"]).optional().default("github").describe("Source"),
+      repo: z.string().describe("Repository to review, e.g. 'pmndrs/zustand' or 'colinhacks/zod'"),
+      source: z.enum(["github"]).optional().default("github"),
     },
-    async ({ repo, source }) => {
-      try {
-        // Build a minimal search result for enrichment
-        const result: SearchResult = {
-          repo: repo,
-          owner: repo.split("/")[0],
-          name: repo.split("/")[1] || repo,
-          description: "",
-          stars: 0,
-          type: "foundation",
-          source: "github",
-          url: `https://github.com/${repo}`,
-          updatedAt: "",
-        };
-
-        // Enrich with quality signals + suitability analysis
-        const enriched = await enrichQuality(result);
-        await analyzeSuitability(enriched);
-
-        // Get issue activity
-        const activity = source === "github"
-          ? await getRepoActivity(repo)
-          : null;
-
-        return {
-          content: [{ type: "text", text: formatReview(enriched, activity) }],
-        };
-      } catch (e) {
-        return {
-          content: [{ type: "text", text: `❌ 分析失败: ${e instanceof Error ? e.message : String(e)}` }],
-          isError: true,
-        };
-      }
+    async ({ repo }) => {
+      const result: SearchResult = {
+        repo, owner: repo.split("/")[0], name: repo.split("/")[1] || repo,
+        description: "", stars: 0, type: "foundation", source: "github",
+        url: `https://github.com/${repo}`, updatedAt: "",
+      };
+      const enriched = await enrichQuality(result);
+      await analyzeSuitability(enriched);
+      const activity = await getRepoActivity(repo);
+      return { content: [{ type: "text", text: formatReview(enriched, activity) }] };
     }
   );
 }
