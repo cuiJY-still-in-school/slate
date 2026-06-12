@@ -10,8 +10,9 @@
  */
 
 import { Command } from "commander";
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 import { deviceFlowLogin, patLogin, logout, whoami, loadAuth } from "./auth/index.js";
 
@@ -208,6 +209,107 @@ program
 
 program.command("logout").description("退出登录").action(() => logout());
 program.command("whoami").description("查看登录用户").action(() => whoami());
+
+// ─── import：导入地基依赖 ────────────────────────────
+program
+  .command("import <repo>")
+  .description("导入地基到当前项目（更新 dependencies.json）")
+  .option("-r, --ref <ref>", "版本引用", "latest")
+  .option("-n, --note <note>", "用途备注", "")
+  .action(async (repo, opts) => {
+    const cwd = process.cwd();
+    const slateDir = join(cwd, ".slate");
+    if (!existsSync(slateDir)) mkdirSync(slateDir, { recursive: true });
+
+    // 读取或创建 dependencies.json
+    const depPath = join(slateDir, "dependencies.json");
+    let deps: { dependencies: Array<Record<string, unknown>> };
+    if (existsSync(depPath)) {
+      deps = JSON.parse(readFileSync(depPath, "utf-8"));
+    } else {
+      deps = { dependencies: [] };
+    }
+
+    // 检查是否已存在
+    const exists = deps.dependencies.some((d: any) => d.foundation_repo === repo);
+    if (exists) {
+      console.log(`⚠️  ${repo} 已在依赖列表中`);
+      return;
+    }
+
+    // 读取地基元数据
+    let architect = repo.split("/")[0];
+    let note = opts.note;
+    try {
+      const metaPath = join(cwd, "registry", repo.replace("/", "-"), ".slate", "foundation.json");
+      if (existsSync(metaPath)) {
+        const meta = JSON.parse(readFileSync(metaPath, "utf-8"));
+        architect = meta.architect || architect;
+        if (!note) note = meta.description?.slice(0, 60) || "";
+      }
+    } catch { /* use defaults */ }
+
+    deps.dependencies.push({
+      foundation_repo: repo,
+      architect,
+      ref: opts.ref,
+      note: note || `导入于 ${new Date().toISOString().slice(0, 10)}`,
+    });
+
+    writeFileSync(depPath, JSON.stringify(deps, null, 2) + "\n");
+    console.log(`✅ 已导入 ${repo} (${architect})`);
+    console.log(`   .slate/dependencies.json 已更新`);
+    console.log(`   查看: slate config`);
+  });
+
+// ─── registry：浏览策展地基 ──────────────────────────
+program
+  .command("registry")
+  .description("浏览 31 个策展地基")
+  .option("-c, --category <cat>", "按类别筛选")
+  .action((opts) => {
+    const srcDir = dirname(fileURLToPath(import.meta.url));
+    const regDir = join(srcDir, "..", "registry");
+    if (!existsSync(regDir)) {
+      console.log("registry/ 目录不存在（从源码运行时可用）");
+      return;
+    }
+
+    const categories: Record<string, string[]> = {};
+    for (const entry of readdirSync(regDir)) {
+      if (entry === "generate.ts" || entry === "generate-v2.ts") continue;
+      const foundationPath = join(regDir, entry, ".slate", "foundation.json");
+      if (!existsSync(foundationPath)) continue;
+      try {
+        const f = JSON.parse(readFileSync(foundationPath, "utf-8"));
+        // 从 keywords 推断类别
+        const kws: string[] = f.keywords || [];
+        let cat = "其他";
+        if (kws.some((k: string) => ["react","state","store","状态管理"].includes(k))) cat = "状态管理";
+        else if (kws.some((k: string) => ["validation","schema","校验"].includes(k))) cat = "校验";
+        else if (kws.some((k: string) => ["http","fetch","HTTP"].includes(k))) cat = "HTTP";
+        else if (kws.some((k: string) => ["orm","database","sql","ORM"].includes(k))) cat = "ORM";
+        else if (kws.some((k: string) => ["css","styling","tailwind","样式"].includes(k))) cat = "样式";
+        else if (kws.some((k: string) => ["testing","test","测试"].includes(k))) cat = "测试";
+        else if (kws.some((k: string) => ["auth","认证"].includes(k))) cat = "认证";
+        else if (kws.some((k: string) => ["cli","命令行","CLI"].includes(k))) cat = "CLI";
+        else if (kws.some((k: string) => ["runtime","framework","框架","运行时"].includes(k))) cat = "运行时";
+        else if (kws.some((k: string) => ["security","crypto","加密","安全"].includes(k))) cat = "安全";
+        else if (kws.some((k: string) => ["lint","format","代码质量"].includes(k))) cat = "工具";
+        else if (kws.some((k: string) => ["ai","llm","AI"].includes(k))) cat = "AI";
+
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(`${f.name} (${entry.replace(/-/g, "/").replace("//", "/")})`);
+      } catch { /* skip */ }
+    }
+
+    for (const [cat, items] of Object.entries(categories).sort()) {
+      if (opts.category && cat !== opts.category) continue;
+      console.log(`\n📂 ${cat}`);
+      for (const item of items) console.log(`   ${item}`);
+    }
+    console.log(`\n导入: slate import <owner/repo>`);
+  });
 
 // ─── 安装命令（给用户用）─────────────────────────────
 program

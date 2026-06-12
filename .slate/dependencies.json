@@ -1,0 +1,10 @@
+{
+  "dependencies": [
+    {
+      "foundation_repo": "pmndrs/zustand",
+      "architect": "slate-registry",
+      "ref": "latest",
+      "note": "React 状态管理"
+    }
+  ]
+}
