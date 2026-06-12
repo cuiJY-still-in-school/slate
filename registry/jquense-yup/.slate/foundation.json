@@ -1,0 +1,26 @@
+{
+  "architect": "slate-registry",
+  "name": "Yup",
+  "description": "死简单（dead simple）的对象 schema 校验。链式 API，内置丰富的校验方法，React 生态常用。",
+  "version": "1.x",
+  "exports": [
+    "object",
+    "string",
+    "number",
+    "boolean",
+    "array",
+    "date",
+    "mixed",
+    "reach",
+    "ref"
+  ],
+  "keywords": [
+    "javascript",
+    "validation",
+    "yup",
+    "schema",
+    "form",
+    "校验",
+    "formik"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "architect": "slate-registry",
+  "name": "NextAuth.js",
+  "description": "Next.js 认证库。支持 OAuth、Credentials、Magic Link 等 80+ provider。内置 session 管理。",
+  "version": "5.x",
+  "exports": [
+    "auth",
+    "signIn",
+    "signOut",
+    "handlers",
+    "Auth.js"
+  ],
+  "keywords": [
+    "auth",
+    "nextjs",
+    "oauth",
+    "authentication",
+    "next-auth",
+    "认证",
+    "session"
+  ]
+}

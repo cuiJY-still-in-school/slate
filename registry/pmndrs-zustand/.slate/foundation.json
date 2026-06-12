@@ -1,0 +1,19 @@
+{
+  "architect": "slate-registry",
+  "name": "Zustand",
+  "description": "🐻 极简 React 状态管理。无 boilerplate，基于 hook，支持中间件和持久化。React 生态中最轻量的状态方案。",
+  "version": "5.x",
+  "exports": [
+    "create",
+    "useStore",
+    "createStore"
+  ],
+  "keywords": [
+    "react",
+    "state-management",
+    "zustand",
+    "hook",
+    "store",
+    "状态管理"
+  ]
+}

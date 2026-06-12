@@ -1,0 +1,18 @@
+{
+  "architect": "slate-registry",
+  "name": "Chalk",
+  "description": "终端字符串样式库。链式 API，自动检测颜色支持，比 ANSI escape code 更优雅。",
+  "version": "5.x",
+  "exports": [
+    "chalk"
+  ],
+  "keywords": [
+    "terminal",
+    "color",
+    "chalk",
+    "cli",
+    "style",
+    "终端",
+    "颜色"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "architect": "slate-registry",
+  "name": "Undici",
+  "description": "Node.js 官方 HTTP 客户端。速度最快的 Node HTTP 实现，HTTP/1.1 + HTTP/2。Node 核心团队维护。",
+  "version": "7.x",
+  "exports": [
+    "request",
+    "fetch",
+    "Dispatcher",
+    "Pool",
+    "Client"
+  ],
+  "keywords": [
+    "nodejs",
+    "http",
+    "client",
+    "undici",
+    "performance",
+    "fetch",
+    "HTTP客户端"
+  ]
+}

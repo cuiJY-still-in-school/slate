@@ -1,0 +1,21 @@
+{
+  "architect": "slate-registry",
+  "name": "Jotai",
+  "description": "👻 原子化 React 状态管理。像 useState 一样简单，自动依赖追踪，按需渲染。比 Zustand 更细粒度。",
+  "version": "2.x",
+  "exports": [
+    "atom",
+    "useAtom",
+    "useAtomValue",
+    "useSetAtom"
+  ],
+  "keywords": [
+    "react",
+    "state",
+    "jotai",
+    "atom",
+    "atomic",
+    "状态管理",
+    "recoil-alternative"
+  ]
+}

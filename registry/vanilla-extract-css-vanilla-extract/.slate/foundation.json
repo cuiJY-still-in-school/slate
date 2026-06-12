@@ -1,0 +1,22 @@
+{
+  "architect": "slate-registry",
+  "name": "Vanilla Extract",
+  "description": "零运行时 CSS-in-TypeScript。在 TS 中写类型安全的样式，构建时编译为静态 CSS 文件。",
+  "version": "1.x",
+  "exports": [
+    "style",
+    "styleVariants",
+    "globalStyle",
+    "createTheme",
+    "sprinkles"
+  ],
+  "keywords": [
+    "css",
+    "typescript",
+    "zero-runtime",
+    "css-in-js",
+    "styling",
+    "vanilla-extract",
+    "样式"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "architect": "slate-registry",
+  "name": "Vitest",
+  "description": "Vite 原生测试框架。兼容 Jest API，速度极快，原生 ESM + TypeScript 支持。",
+  "version": "3.x",
+  "exports": [
+    "describe",
+    "it",
+    "expect",
+    "vi",
+    "beforeEach",
+    "afterEach",
+    "test"
+  ],
+  "keywords": [
+    "testing",
+    "vitest",
+    "vite",
+    "jest",
+    "unit-test",
+    "测试",
+    "e2e"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "architect": "slate-registry",
+  "name": "LangChain.js",
+  "description": "LLM 应用框架。支持模型切换、chain/pipeline、向量数据库、Agent、工具调用。AI 应用首选。",
+  "version": "0.x",
+  "exports": [
+    "ChatOpenAI",
+    "ChatAnthropic",
+    "PromptTemplate",
+    "AgentExecutor",
+    "RetrievalQAChain"
+  ],
+  "keywords": [
+    "ai",
+    "llm",
+    "langchain",
+    "agent",
+    "chatgpt",
+    "claude",
+    "AI",
+    "大模型"
+  ]
+}

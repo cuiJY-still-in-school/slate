@@ -1,0 +1,23 @@
+{
+  "architect": "slate-registry",
+  "name": "Playwright",
+  "description": "微软出品的端到端测试框架。跨浏览器（Chromium/Firefox/WebKit），自动等待，trace viewer。",
+  "version": "1.x",
+  "exports": [
+    "test",
+    "expect",
+    "chromium",
+    "firefox",
+    "webkit",
+    "devices"
+  ],
+  "keywords": [
+    "testing",
+    "e2e",
+    "playwright",
+    "browser",
+    "automation",
+    "测试",
+    "端到端"
+  ]
+}

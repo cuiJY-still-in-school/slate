@@ -1,0 +1,20 @@
+{
+  "architect": "slate-registry",
+  "name": "Ky",
+  "description": "基于 Fetch API 的轻量 HTTP 客户端。零依赖，支持重试、超时、hook。比 axios 更现代。",
+  "version": "1.x",
+  "exports": [
+    "ky",
+    "HTTPError",
+    "TimeoutError"
+  ],
+  "keywords": [
+    "http",
+    "client",
+    "fetch",
+    "ky",
+    "lightweight",
+    "retry",
+    "HTTP客户端"
+  ]
+}

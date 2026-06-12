@@ -1,0 +1,27 @@
+{
+  "architect": "slate-registry",
+  "name": "Drizzle ORM",
+  "description": "TypeScript ORM。SQL-like 查询，零抽象开销，类型安全，支持 PostgreSQL/MySQL/SQLite。",
+  "version": "0.x",
+  "exports": [
+    "pgTable",
+    "mysqlTable",
+    "sqliteTable",
+    "eq",
+    "and",
+    "or",
+    "desc",
+    "asc"
+  ],
+  "keywords": [
+    "typescript",
+    "orm",
+    "database",
+    "sql",
+    "drizzle",
+    "postgresql",
+    "mysql",
+    "sqlite",
+    "ORM"
+  ]
+}

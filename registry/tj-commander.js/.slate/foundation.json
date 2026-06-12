@@ -1,0 +1,20 @@
+{
+  "architect": "slate-registry",
+  "name": "Commander.js",
+  "description": "Node.js 命令行工具框架。声明式定义命令和参数，自动生成 help，支持子命令。事实标准。",
+  "version": "13.x",
+  "exports": [
+    "program",
+    "Command",
+    "Option",
+    "Argument"
+  ],
+  "keywords": [
+    "cli",
+    "command",
+    "commander",
+    "nodejs",
+    "CLI工具",
+    "命令行"
+  ]
+}

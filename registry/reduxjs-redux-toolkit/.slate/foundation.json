@@ -1,0 +1,21 @@
+{
+  "architect": "slate-registry",
+  "name": "Redux Toolkit",
+  "description": "官方推荐的 Redux 开发工具集。包含 configureStore、createSlice、RTK Query，大幅简化 Redux 开发。",
+  "version": "2.x",
+  "exports": [
+    "configureStore",
+    "createSlice",
+    "createAsyncThunk",
+    "createApi"
+  ],
+  "keywords": [
+    "react",
+    "redux",
+    "state-management",
+    "rtk",
+    "toolkit",
+    "状态管理",
+    "enterprise"
+  ]
+}

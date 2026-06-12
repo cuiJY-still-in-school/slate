@@ -1,0 +1,22 @@
+{
+  "architect": "slate-registry",
+  "name": "Zod",
+  "description": "TypeScript-first schema 校验库。静态类型推导 + 运行时校验，零依赖。生态最完善的 TS 校验方案。",
+  "version": "3.x",
+  "exports": [
+    "z",
+    "ZodSchema",
+    "ZodObject",
+    "ZodString",
+    "ZodNumber"
+  ],
+  "keywords": [
+    "typescript",
+    "validation",
+    "zod",
+    "schema",
+    "校验",
+    "type-safe",
+    "runtime"
+  ]
+}

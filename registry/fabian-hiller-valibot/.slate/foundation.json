@@ -1,0 +1,23 @@
+{
+  "architect": "slate-registry",
+  "name": "Valibot",
+  "description": "模块化、可 tree-shake 的 schema 校验库。打包体积比 Zod 小 98%，API 相似。追求极致 bundle size 的首选。",
+  "version": "1.x",
+  "exports": [
+    "string",
+    "number",
+    "object",
+    "array",
+    "parse",
+    "safeParse"
+  ],
+  "keywords": [
+    "typescript",
+    "validation",
+    "valibot",
+    "schema",
+    "bundle-size",
+    "tree-shakeable",
+    "校验"
+  ]
+}

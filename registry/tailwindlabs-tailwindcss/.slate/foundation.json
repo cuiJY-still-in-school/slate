@@ -1,0 +1,20 @@
+{
+  "architect": "slate-registry",
+  "name": "Tailwind CSS",
+  "description": "实用优先（utility-first）CSS 框架。直接在 HTML 里写样式，JIT 引擎按需生成。现代 Web 开发标准。",
+  "version": "4.x",
+  "exports": [
+    "@tailwindcss/vite",
+    "tailwindcss",
+    "@tailwindcss/postcss"
+  ],
+  "keywords": [
+    "css",
+    "tailwind",
+    "utility-first",
+    "styling",
+    "framework",
+    "样式",
+    "CSS框架"
+  ]
+}

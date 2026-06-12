@@ -1,0 +1,20 @@
+{
+  "architect": "slate-registry",
+  "name": "Kysely",
+  "description": "端到端类型安全的 SQL 查询构建器。写 SQL，得 TypeScript 类型。比 Prisma 更灵活，比 Drizzle 更接近 SQL。",
+  "version": "0.x",
+  "exports": [
+    "sql",
+    "SelectQueryBuilder",
+    "InsertQueryBuilder",
+    "UpdateQueryBuilder"
+  ],
+  "keywords": [
+    "typescript",
+    "sql",
+    "query-builder",
+    "kysely",
+    "type-safe",
+    "ORM"
+  ]
+}
