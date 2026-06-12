@@ -11,12 +11,10 @@ import { getRepoActivity, enrichQuality, analyzeSuitability, type SearchResult }
 
 function formatReview(result: SearchResult, activity: Awaited<ReturnType<typeof getRepoActivity>>): string {
   const name = result.repo;
-  const source = result.source === "npm" ? "📦npm" : "🐙GitHub";
 
   const lines = [
     `# 📋 质量评估: ${name}`,
     ``,
-    `**来源**: ${source}`,
     `**描述**: ${result.description || "无"}`,
     `**评分**: ${"⭐".repeat(Math.round((result.qualityScore || 50) / 20))} (${result.qualityScore || "?"}/100)`,
     ``,
@@ -92,22 +90,20 @@ Use this tool AFTER slate_search to evaluate whether a foundation is
 high-quality enough to depend on.`,
     {
       repo: z.string().describe("Repository 'owner/name' or npm package name to review"),
-      source: z.enum(["github", "npm"]).optional().default("github").describe("Source type"),
+      source: z.enum(["github"]).optional().default("github").describe("Source"),
     },
     async ({ repo, source }) => {
       try {
         // Build a minimal search result for enrichment
         const result: SearchResult = {
-          repo: source === "npm" ? `npm:${repo}` : repo,
+          repo: repo,
           owner: repo.split("/")[0],
           name: repo.split("/")[1] || repo,
           description: "",
           stars: 0,
           type: "foundation",
-          source,
-          url: source === "npm"
-            ? `https://www.npmjs.com/package/${repo}`
-            : `https://github.com/${repo}`,
+          source: "github",
+          url: `https://github.com/${repo}`,
           updatedAt: "",
         };
 

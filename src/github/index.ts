@@ -79,7 +79,7 @@ export interface SearchResult {
   description: string;
   stars: number;
   type: "intention" | "foundation";
-  source: "github" | "npm";
+  source: "github";
   url: string;
   updatedAt: string;
   // 质量信号
@@ -161,35 +161,6 @@ export async function searchGlobal(
       });
     }
   } catch (e) { /* code search 失败不影响 */ }
-
-  // 渠道3: npm Registry（搜所有包，不限 slate keywords）
-  try {
-    const npmUrl = `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(query)}&size=${limit}`;
-    const res = await fetch(npmUrl, { headers: { "User-Agent": "slate-protocol/0.1" } });
-    if (res.ok) {
-      const data = await res.json() as {
-        objects?: Array<{
-          package: { name: string; description?: string; version: string; date: string; links: { npm: string } };
-          score: { final: number };
-        }>;
-      };
-      for (const obj of data.objects || []) {
-        const pkg = obj.package;
-        const owner = pkg.name.startsWith("@") ? pkg.name.split("/")[0].slice(1) : "npm";
-        addResult({
-          repo: `npm:${pkg.name}`,
-          owner,
-          name: pkg.name,
-          description: pkg.description || "",
-          stars: Math.round(obj.score.final * 1000),
-          type: "foundation",
-          source: "npm",
-          url: pkg.links.npm,
-          updatedAt: pkg.date,
-        });
-      }
-    }
-  } catch (e) { /* npm 搜索失败不影响 */ }
 
   return [...results.values()].sort((a, b) => b.stars - a.stars).slice(0, limit);
 }
@@ -297,47 +268,6 @@ export async function enrichQuality(result: SearchResult): Promise<SearchResult>
         const issueScore = stars > 0 ? Math.max(0, 100 - (issues / stars) * 100) : 50;
         result.qualityScore = Math.round(stars > 1000 ? 80 + Math.min(20, stars / 500) :
           Math.round((activityScore * 0.5 + issueScore * 0.3 + Math.min(100, stars / 10) * 0.2)));
-      }
-    }
-    if (result.source === "npm") {
-      const pkgName = result.repo.replace("npm:", "");
-      // 并行获取下载量 + 包元数据
-      const [dlRes, metaRes] = await Promise.all([
-        fetch(`https://api.npmjs.org/downloads/point/last-month/${encodeURIComponent(pkgName)}`, {
-          headers: { "User-Agent": "slate-protocol/0.1" },
-        }),
-        fetch(`https://registry.npmjs.org/${encodeURIComponent(pkgName)}/latest`, {
-          headers: { "User-Agent": "slate-protocol/0.1" },
-        }),
-      ]);
-      if (dlRes.ok) {
-        const dl = await dlRes.json() as { downloads?: number };
-        result.npmDownloads = dl.downloads || 0;
-        result.stars = result.npmDownloads;
-      }
-      // 包元数据: types, dependencies, license
-      if (metaRes.ok) {
-        const meta = await metaRes.json() as {
-          types?: string; typings?: string; license?: string;
-          dependencies?: Record<string, string>; devDependencies?: Record<string, string>;
-        };
-        // 有类型定义 +15分
-        const hasTypes = !!(meta.types || meta.typings);
-        // 依赖数少 +10分（轻量加分）
-        const depCount = Object.keys(meta.dependencies || {}).length;
-        const isLightweight = depCount <= 5;
-        // 有 license +5分
-        const hasLicense = !!meta.license;
-
-        const d = result.npmDownloads || 0;
-        let score = d > 1000000 ? 80 : d > 100000 ? 65 : d > 10000 ? 45 : d > 1000 ? 30 : 15;
-        if (hasTypes) score += 10;
-        if (isLightweight) score += 5;
-        if (hasLicense) score += 5;
-        result.qualityScore = Math.min(100, Math.round(score));
-
-        // 补充 license（如果 GitHub 没拿到）
-        if (!result.license && meta.license) result.license = typeof meta.license === "string" ? meta.license : "see-package.json";
       }
     }
   } catch { /* enrichment is best-effort */ }

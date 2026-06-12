@@ -1,0 +1,20 @@
+{
+  "architect": "slate-registry",
+  "name": "date-fns",
+  "description": "现代日期工具库。函数式 API，tree-shakeable，无副作用，200+ 函数。",
+  "version": "4.x",
+  "exports": [
+    "format",
+    "addDays",
+    "differenceInDays",
+    "isBefore",
+    "parseISO"
+  ],
+  "keywords": [
+    "date",
+    "time",
+    "utility",
+    "tree-shakeable",
+    "日期"
+  ]
+}

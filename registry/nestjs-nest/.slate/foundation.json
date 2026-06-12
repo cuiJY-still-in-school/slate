@@ -1,0 +1,21 @@
+{
+  "architect": "slate-registry",
+  "name": "NestJS",
+  "description": "渐进式 Node.js 框架。TypeScript-first，模块化架构，内置 DI、 guards、interceptors。",
+  "version": "11.x",
+  "exports": [
+    "Module",
+    "Controller",
+    "Injectable",
+    "Guard",
+    "Interceptor"
+  ],
+  "keywords": [
+    "nestjs",
+    "nodejs",
+    "framework",
+    "typescript",
+    "backend",
+    "框架"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "architect": "slate-registry",
+  "name": "Svelte",
+  "description": "编译时消失的框架。写组件，编译为纯 JS，无运行时。",
+  "version": "5.x",
+  "exports": [
+    "mount",
+    "tick",
+    "getContext",
+    "setContext"
+  ],
+  "keywords": [
+    "svelte",
+    "compiler",
+    "ui",
+    "framework",
+    "前端"
+  ]
+}

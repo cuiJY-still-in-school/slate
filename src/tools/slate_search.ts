@@ -30,15 +30,14 @@ function formatResults(results: SearchResult[]): string {
 
   for (const r of results) {
     const typeIcon = r.type === "intention" ? "💡意图" : "🧱地基";
-    const sourceIcon = r.source === "npm" ? "📦npm" : "🐙GitHub";
     const score = r.qualityScore;
     const scoreStr = score ? ` 🏆${score}分` : "";
     const stats = [
-      r.stars ? (r.source === "npm" ? `📥${(r.stars / 1000).toFixed(0)}k/月` : `⭐${r.stars}`) : "",
+      r.stars ? `⭐${r.stars}` : "",
       r.openIssues !== undefined ? `🐛${r.openIssues}个issue` : "",
       r.license ? `📜${r.license}` : "",
     ].filter(Boolean).join(" · ");
-    lines.push(`### ${typeIcon} [${r.repo}](${r.url}) ${sourceIcon}${scoreStr}`);
+    lines.push(`### ${typeIcon} [${r.repo}](${r.url}) ${scoreStr}`);
     if (r.description) lines.push(`> ${r.description}`);
     if (stats) lines.push(`${stats}`);
     if (r.updatedAt) lines.push(`更新: ${r.updatedAt.slice(0, 10)}`);

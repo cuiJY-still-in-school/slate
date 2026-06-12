@@ -1,0 +1,20 @@
+{
+  "architect": "slate-registry",
+  "name": "Fastify",
+  "description": "极速 Node.js web 框架。schema 驱动的序列化，插件生态，低开销。",
+  "version": "5.x",
+  "exports": [
+    "fastify",
+    "FastifyInstance",
+    "FastifyRequest",
+    "FastifyReply"
+  ],
+  "keywords": [
+    "fastify",
+    "nodejs",
+    "web",
+    "framework",
+    "http",
+    "高性能"
+  ]
+}

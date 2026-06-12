@@ -1,0 +1,17 @@
+{
+  "architect": "slate-registry",
+  "name": "ESLint",
+  "description": "可插拔 JS/TS linter。AST 级别分析，自定义规则，自动修复。",
+  "version": "9.x",
+  "exports": [
+    "Linter",
+    "RuleTester"
+  ],
+  "keywords": [
+    "lint",
+    "eslint",
+    "typescript",
+    "quality",
+    "代码质量"
+  ]
+}

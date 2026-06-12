@@ -1,0 +1,18 @@
+{
+  "architect": "slate-registry",
+  "name": "bcryptjs",
+  "description": "纯 JS bcrypt 实现。零依赖，兼容 PHP/OpenBSD。",
+  "version": "2.x",
+  "exports": [
+    "hash",
+    "compare",
+    "genSalt"
+  ],
+  "keywords": [
+    "bcrypt",
+    "password",
+    "hash",
+    "security",
+    "加密"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "architect": "slate-registry",
+  "name": "Biome",
+  "description": "统一开发工具链。lint + format，Rust 编写，极速，替代 ESLint + Prettier。",
+  "version": "1.x",
+  "exports": [
+    "biome"
+  ],
+  "keywords": [
+    "lint",
+    "format",
+    "biome",
+    "rust",
+    "performance",
+    "格式化"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "architect": "slate-registry",
+  "name": "NanoID",
+  "description": "极小的唯一 ID 生成器。URL-safe，比 UUID 更短更快。",
+  "version": "5.x",
+  "exports": [
+    "nanoid"
+  ],
+  "keywords": [
+    "id",
+    "uuid",
+    "nanoid",
+    "unique",
+    "轻量"
+  ]
+}

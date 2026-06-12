@@ -1,0 +1,21 @@
+{
+  "architect": "slate-registry",
+  "name": "SolidJS",
+  "description": "响应式 UI 库。无虚拟 DOM，编译时优化，JSX 语法，极细粒度更新。",
+  "version": "1.x",
+  "exports": [
+    "createSignal",
+    "createEffect",
+    "createMemo",
+    "For",
+    "Show"
+  ],
+  "keywords": [
+    "solidjs",
+    "reactive",
+    "ui",
+    "framework",
+    "jsx",
+    "前端"
+  ]
+}
