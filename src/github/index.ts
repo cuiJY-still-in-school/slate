@@ -73,12 +73,13 @@ async function githubApi(
 // ─── 搜索 ───────────────────────────────────────────
 
 export interface SearchResult {
-  repo: string;       // "owner/name"
+  repo: string;       // "owner/name" or npm package name
   owner: string;
   name: string;
   description: string;
-  stars: number;
+  stars: number;      // GitHub stars or npm weekly downloads/100
   type: "intention" | "foundation";
+  source: "github" | "npm";
   url: string;
   updatedAt: string;
 }
@@ -125,6 +126,7 @@ export async function searchGlobal(
           name: repo.name as string,
           description: (repo.description as string) || "",
           stars: (repo.stargazers_count as number) || 0,
+          source: "github" as const,
           type: t as "intention" | "foundation",
           url: repo.html_url as string,
           updatedAt: repo.updated_at as string,
@@ -157,6 +159,7 @@ export async function searchGlobal(
         name: item.name as string,
         description: (item.description as string) || "",
         stars: (item.stargazers_count as number) || 0,
+          source: "github" as const,
         type: itemType,
         url: item.html_url as string,
         updatedAt: item.updated_at as string,
@@ -164,6 +167,41 @@ export async function searchGlobal(
     }
   } catch (e) {
     console.error("Repo search failed:", e);
+  }
+
+  // 渠道3: npm registry — 搜 keywords:slate-foundation / slate-intention
+  if (type === "both" || type === "foundation") {
+    try {
+      const npmQuery = `keywords:slate-foundation,slate-intention ${query}`;
+      const npmUrl = `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(npmQuery)}&size=${limit}`;
+      const res = await fetch(npmUrl, {
+        headers: { "User-Agent": "slate-protocol/0.1" },
+      });
+      if (res.ok) {
+        const data = await res.json() as {
+          objects?: Array<{
+            package: { name: string; description?: string; version: string; date: string; links: { npm: string; repository?: string } };
+            score: { final: number };
+          }>;
+        };
+        for (const obj of data.objects || []) {
+          const pkg = obj.package;
+          addResult({
+            repo: `npm:${pkg.name}`,
+            owner: pkg.name.split("/")[0].replace("@", ""),
+            name: pkg.name,
+            description: pkg.description || "",
+            stars: Math.round(obj.score.final * 1000), // npm search score → stars proxy
+            type: "foundation",
+            source: "npm",
+            url: pkg.links.npm,
+            updatedAt: pkg.date,
+          });
+        }
+      }
+    } catch (e) {
+      console.error("npm search failed:", e);
+    }
   }
 
   // 排序：按 stars 降序

@@ -25,8 +25,10 @@ function formatResults(results: SearchResult[]): string {
 
   for (const r of results) {
     const typeIcon = r.type === "intention" ? "💡意图" : "🧱地基";
-    lines.push(`### ${typeIcon} [${r.repo}](${r.url}) ⭐ ${r.stars}`);
+    const sourceIcon = r.source === "npm" ? "📦npm" : "🐙GitHub";
+    lines.push(`### ${typeIcon} [${r.repo}](${r.url}) ${sourceIcon} ⭐ ${r.stars}`);
     if (r.description) lines.push(`> ${r.description}`);
+    lines.push(`- 来源: ${r.source === "npm" ? "npm registry" : "GitHub"}`);
     lines.push(`- 类型: ${r.type}`);
     lines.push(`- 更新: ${r.updatedAt}`);
     lines.push("");
@@ -49,7 +51,8 @@ MUST BE USED when starting a new feature, when the user describes something to b
 The search scans:
 1. All GitHub repositories with .slate/ protocol files
 2. Repositories tagged with topic:slate-intention or topic:slate-foundation
-Results are ranked by GitHub stars (quality signal from real usage).
+3. npm registry packages with keywords:slate-foundation or slate-intention
+Results from all sources are merged and ranked.
 
 Use PROACTIVELY — search BEFORE coding. Keywords: build, create, add, implement, feature, component, function, page, library, module.`,
     {
