@@ -31,7 +31,7 @@ program
 program
   .command("setup")
   .description("GitHub 登录 + 初始化石板 + 关联 AI 工具")
-  .option("-p, --platform <p>", "claude-code | cursor | copilot")
+  .option("-p, --platform <p>", "claude-code | cursor | copilot | openclaw")
   .action(async (opts) => {
     const cwd = process.cwd();
 
@@ -94,6 +94,13 @@ program
         console.log(JSON.stringify({ "github.copilot.mcp.servers": { slate: { command: "node", args: [join(cwd, "dist/index.js"), "mcp"] } } }, null, 2));
         break;
       }
+      case "openclaw": {
+        const mcp = { mcpServers: { slate: { type: "stdio", command: "node", args: [join(cwd, "dist/index.js"), "mcp"] } } };
+        writeFileSync(join(cwd, "openclaw.mcp.json"), JSON.stringify(mcp, null, 2) + "\n");
+        console.log("✅ openclaw.mcp.json — OpenClaw");
+        console.log("   在 openclaw 中导入: openclaw mcp set slate -- node dist/index.js mcp");
+        break;
+      }
     }
 
     console.log(`🪨 石板已配置 (owner: ${user}, platform: ${platform})`);
@@ -112,8 +119,10 @@ program
 
 async function detectPlatform(): Promise<string | null> {
   try { execSync("claude --version", { stdio: "pipe", timeout: 3000 }); return "claude-code"; } catch {}
+  try { execSync("openclaw --version", { stdio: "pipe", timeout: 3000 }); return "openclaw"; } catch {}
   const home = process.env.HOME || "~";
   if (existsSync(join(home, ".cursor")) || existsSync(join(home, ".config", "Cursor"))) return "cursor";
+  if (existsSync(join(home, ".config", "openclaw"))) return "openclaw";
   try { execSync("code --version", { stdio: "pipe", timeout: 3000 }); return "copilot"; } catch {}
   return null;
 }
