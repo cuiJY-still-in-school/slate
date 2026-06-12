@@ -1,13 +1,23 @@
 /**
  * slate_search — 搜索全球意图和地基
  *
- * 核心工具。在所有公开 GitHub 仓库中搜索石板协议文件。
- * 用 GitHub Code Search + Repo Search 双渠道，
- * 按 stars 自然排序返回。
+ * 核心工具。三渠道搜索（GitHub Repo + GitHub Code + npm Registry），
+ * 自动去重、质量评分、适用场景分析。
+ * 内置 5 分钟缓存，避免重复请求触发 rate limit。
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { searchGlobal, enrichQuality, type SearchResult } from "../github/index.js";
+
+// ─── 缓存 ───────────────────────────────────────────
+
+const cache = new Map<string, { results: SearchResult[]; time: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5分钟
+
+function cacheKey(query: string, tech_stack?: string, type?: string): string {
+  return `${query}|${tech_stack || ""}|${type || "both"}`;
+}
 import { searchGlobal, enrichQuality, type SearchResult } from "../github/index.js";
 
 function formatResults(results: SearchResult[]): string {
@@ -66,15 +76,25 @@ Use PROACTIVELY — search BEFORE coding. Keywords: build, create, add, implemen
       type: z.enum(["intention", "foundation", "both"]).optional().default("both").describe("Filter by Slate protocol type"),
     },
     async ({ query, tech_stack, type }) => {
-      const searchQuery = tech_stack ? `${query} ${tech_stack}` : query;
-      const results = await searchGlobal(searchQuery, type);
-      // 为前5个结果补充质量信号
-      const enriched = await Promise.all(
-        results.slice(0, 5).map(r => enrichQuality(r).catch(() => r))
-      );
-      const rest = results.slice(5);
+      const key = cacheKey(query, tech_stack, type);
+      const cached = cache.get(key);
+
+      let results: SearchResult[];
+      if (cached && (Date.now() - cached.time) < CACHE_TTL) {
+        results = cached.results;
+      } else {
+        const searchQuery = tech_stack ? `${query} ${tech_stack}` : query;
+        results = await searchGlobal(searchQuery, type);
+        // 为前5个结果补充质量信号
+        const enriched = await Promise.all(
+          results.slice(0, 5).map(r => enrichQuality(r).catch(() => r))
+        );
+        results = [...enriched, ...results.slice(5)];
+        cache.set(key, { results, time: Date.now() });
+      }
+
       return {
-        content: [{ type: "text", text: formatResults([...enriched, ...rest]) }],
+        content: [{ type: "text", text: formatResults(results) }],
       };
     }
   );

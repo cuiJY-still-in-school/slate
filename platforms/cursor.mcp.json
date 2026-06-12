@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "slate": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@slate-protocol/slate", "mcp"]
+    }
+  }
+}
