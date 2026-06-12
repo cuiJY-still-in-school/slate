@@ -26,8 +26,10 @@ slate setup -p openclaw    # 指定平台
 ## 命令
 
 ```bash
-slate          # 启动 MCP Server
+slate          # 帮助
 slate setup    # 一条龙配置
+slate status   # 健康检查
+slate mcp      # 启动 MCP Server
 slate login    # GitHub 登录
 ```
 
