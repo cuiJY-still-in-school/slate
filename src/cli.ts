@@ -69,47 +69,62 @@ program
       console.log("  ✅ 已存在");
     }
 
-    // 3. 平台
-    console.log("→ 关联 AI 工具…");
-    const platform = opts.platform || (await detectPlatform());
-    if (!platform) {
-      console.log("  ⚠️  未检测到 AI 工具");
-      console.log("  指定: slate setup -p claude-code|cursor|copilot|openclaw");
+    // 3. 配置所有检测到的平台
+    const token = auth.token;
+    const env = token ? { GH_TOKEN: token } : {};
+    const nodePath = process.execPath;
+    const installDir = process.env.SLATE_DIR || join(process.env.HOME || "~", ".slate");
+    const mcp = { mcpServers: { slate: { type: "stdio", command: nodePath, args: [join(installDir, "dist/index.js"), "mcp"], ...(token ? { env } : {}) } } };
+
+    const targets = opts.platform ? [opts.platform] : detectAllPlatforms();
+    if (targets.length === 0) {
+      console.log("  ⚠️  未检测到 AI 工具。指定: slate setup -p claude-code|cursor|copilot|openclaw");
       return;
     }
 
-    const token = auth.token;
-    const env = token ? { GH_TOKEN: token } : {};
-    const nodePath = process.execPath; // 绝对路径，Claude Code 不需要 NVM
-    const installDir = process.env.SLATE_DIR || join(process.env.HOME || "~", ".slate");
-    const mcp = { mcpServers: { slate: { type: "stdio", command: nodePath, args: [join(installDir, "dist/index.js"), "mcp"], ...(token ? { env } : {}) } } };
-    switch (platform) {
-      case "claude-code": {
-        writeFileSync(join(cwd, ".mcp.json"), JSON.stringify(mcp, null, 2) + "\n");
-        console.log("  ✅ .mcp.json → Claude Code");
-        break;
-      }
-      case "cursor": {
-        const cd = join(cwd, ".cursor");
-        if (!existsSync(cd)) mkdirSync(cd);
-        writeFileSync(join(cd, "mcp.json"), JSON.stringify(mcp, null, 2) + "\n");
-        console.log("  ✅ .cursor/mcp.json → Cursor");
-        break;
-      }
-      case "openclaw": {
-        writeFileSync(join(cwd, "openclaw.mcp.json"), JSON.stringify(mcp, null, 2) + "\n");
-        console.log("  ✅ openclaw.mcp.json → OpenClaw");
-        break;
-      }
-      case "copilot": {
-        console.log("  复制到 .vscode/settings.json:");
-        console.log("  " + JSON.stringify({ "github.copilot.mcp.servers": { slate: { command: "node", args: [join(cwd, "dist/index.js"), "mcp"] } } }));
-        break;
+    console.log(`→ 配置 ${targets.length} 个平台…`);
+    const configured: string[] = [];
+
+    for (const p of targets) {
+      switch (p) {
+        case "claude-code": {
+          // 全局 + 项目
+          writeFileSync(join(home, ".mcp.json"), JSON.stringify(mcp, null, 2) + "\n");
+          writeFileSync(join(cwd, ".mcp.json"), JSON.stringify(mcp, null, 2) + "\n");
+          configured.push("Claude Code (~/.mcp.json)");
+          break;
+        }
+        case "cursor": {
+          const cd = join(home, ".cursor");
+          if (!existsSync(cd)) mkdirSync(cd);
+          writeFileSync(join(cd, "mcp.json"), JSON.stringify(mcp, null, 2) + "\n");
+          // AI 指令
+          writeFileSync(join(home, ".cursorrules"), "🪨 石板协议已激活。有 slate_search/review/read/write/claim/publish。写代码前 MUST 先调 slate_search。\n");
+          configured.push("Cursor (~/.cursor/mcp.json + ~/.cursorrules)");
+          break;
+        }
+        case "openclaw": {
+          const od = join(home, ".config", "openclaw");
+          if (!existsSync(od)) mkdirSync(od, { recursive: true });
+          writeFileSync(join(od, "mcp.json"), JSON.stringify(mcp, null, 2) + "\n");
+          writeFileSync(join(od, "instructions.md"), "# 石板协议\n写新代码前 MUST 先调 slate_search。\n");
+          configured.push("OpenClaw (~/.config/openclaw/)");
+          break;
+        }
+        case "copilot": {
+          const ghDir = join(home, ".github");
+          if (!existsSync(ghDir)) mkdirSync(ghDir);
+          writeFileSync(join(ghDir, "copilot-instructions.md"), "🪨 石板协议已激活。有 slate_search/review/read/write/claim/publish。写代码前 MUST 先调 slate_search。\n");
+          configured.push("Copilot (~/.github/copilot-instructions.md)");
+          break;
+        }
       }
     }
 
     console.log("");
-    console.log(`🪨 完成！${auth.user} @ ${platform}`);
+    configured.forEach(c => console.log(`  ✅ ${c}`));
+    console.log("");
+    console.log(`🪨 完成！${auth.user} — ${configured.length} 个平台已配置`);
     console.log("下次启动 AI 工具时，石板工具自动加载。");
   });
 
@@ -161,14 +176,26 @@ program
   });
 
 // ─── detect ────────────────────────────────────────
+const home = process.env.HOME || "~";
+
 async function detectPlatform(): Promise<string | null> {
   try { execSync("claude --version", { stdio: "pipe", timeout: 3000 }); return "claude-code"; } catch {}
   try { execSync("openclaw --version", { stdio: "pipe", timeout: 3000 }); return "openclaw"; } catch {}
-  const home = process.env.HOME || "~";
   if (existsSync(join(home, ".cursor")) || existsSync(join(home, ".config", "Cursor"))) return "cursor";
   if (existsSync(join(home, ".config", "openclaw"))) return "openclaw";
   try { execSync("code --version", { stdio: "pipe", timeout: 3000 }); return "copilot"; } catch {}
   return null;
+}
+
+function detectAllPlatforms(): string[] {
+  const platforms: string[] = [];
+  try { execSync("claude --version", { stdio: "pipe", timeout: 3000 }); platforms.push("claude-code"); } catch {}
+  try { execSync("openclaw --version", { stdio: "pipe", timeout: 3000 }); platforms.push("openclaw"); } catch {}
+  if (existsSync(join(home, ".cursor")) || existsSync(join(home, ".config", "Cursor"))) platforms.push("cursor");
+  if (existsSync(join(home, ".config", "openclaw")) && !platforms.includes("openclaw")) platforms.push("openclaw");
+  try { execSync("code --version", { stdio: "pipe", timeout: 3000 }); platforms.push("copilot"); } catch {}
+  if (platforms.length === 0) platforms.push("claude-code"); // 至少默认
+  return platforms;
 }
 
 program.parse();
