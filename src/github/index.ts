@@ -8,6 +8,21 @@
 import { execSync } from "node:child_process";
 import { getToken } from "../auth/index.js";
 
+// ─── 已知垃圾仓库黑名单 ────────────────────────────
+const SPAM_REPOS = new Set([
+  "Dujltqzv/Some-Many-Books",   // PDF盗版书库，污染中文搜索
+  "cirosantilli/china-dictatorship", // 政治内容
+]);
+
+/** 检测垃圾仓库模式 */
+function isSpam(repo: string): boolean {
+  if (SPAM_REPOS.has(repo)) return true;
+  // 仓库名包含随机小写字母串（常见于垃圾仓库）
+  const owner = repo.split("/")[0];
+  if (/^[a-z]{8,}$/.test(owner) && !/[aeiou]{2,}/.test(owner)) return true;
+  return false;
+}
+
 // ─── 凭据 ───────────────────────────────────────────
 
 /** 获取 GitHub 认证 token（委托给 auth 模块） */
@@ -162,9 +177,10 @@ export async function searchGlobal(
     }
   } catch (e) { /* code search 失败不影响 */ }
 
-  // 过滤无编程语言的非代码仓库，按 stars 排序
+  // 过滤垃圾仓库，按 stars 排序
   return [...results.values()]
-    .filter(r => r.source === "github" ? r.stars > 0 : true) // 至少有点用
+    .filter(r => !isSpam(r.repo))
+    .filter(r => r.stars > 0)
     .sort((a, b) => b.stars - a.stars)
     .slice(0, limit);
 }
