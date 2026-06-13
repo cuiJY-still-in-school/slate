@@ -41,6 +41,24 @@ exec node "$HOME/.slate/dist/index.js" "$@"
 EOF
 chmod +x "$BIN"
 
+# 全局 MCP 配置（Claude Code 优先读 ~/.mcp.json）
+NODE_PATH="$(which node)"
+GH_TOKEN_VAL="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+if [ -n "$GH_TOKEN_VAL" ]; then
+  cat > "$HOME/.mcp.json" << MCPEOF
+{
+  "mcpServers": {
+    "slate": {
+      "type": "stdio",
+      "command": "$NODE_PATH",
+      "args": ["$DIR/dist/index.js", "mcp"],
+      "env": { "GH_TOKEN": "$GH_TOKEN_VAL" }
+    }
+  }
+}
+MCPEOF
+fi
+
 # PATH
 case "$SHELL" in
   */zsh)  RC="$HOME/.zshrc" ;;

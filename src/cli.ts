@@ -80,7 +80,9 @@ program
 
     const token = auth.token;
     const env = token ? { GH_TOKEN: token } : {};
-    const mcp = { mcpServers: { slate: { type: "stdio", command: "node", args: [join(cwd, "dist/index.js"), "mcp"], ...(token ? { env } : {}) } } };
+    const nodePath = process.execPath; // 绝对路径，Claude Code 不需要 NVM
+    const installDir = process.env.SLATE_DIR || join(process.env.HOME || "~", ".slate");
+    const mcp = { mcpServers: { slate: { type: "stdio", command: nodePath, args: [join(installDir, "dist/index.js"), "mcp"], ...(token ? { env } : {}) } } };
     switch (platform) {
       case "claude-code": {
         writeFileSync(join(cwd, ".mcp.json"), JSON.stringify(mcp, null, 2) + "\n");
