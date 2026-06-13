@@ -1,106 +1,123 @@
 /**
- * PostToolUse Hook — 信号捕获
+ * PostToolUse Hook — 自动飞轮捕获
  *
- * 在 AI 每次调用工具后执行。检测协议相关事件，自动记录信号。
+ * AI 每完成一个工具调用后执行。自动检测可发布的地基，
+ * 自动记录依赖关系。AI 不需要主动调 slate_publish——
+ * 写完代码的那一刻，飞轮已经在转了。
  *
- * 监听：
- * 1. exec 中的 git submodule add / npm install → 检测新依赖，提示更新 dependencies.json
- * 2. write 中的新文件创建 → 检测是否是可发布的地基
- * 3. slate_write 中的状态变更 → 记录意图流转
- *
- * 配置方式（.claude/settings.local.json）:
- * {
- *   "hooks": {
- *     "PostToolUse": [{
- *       "matcher": "*",
- *       "hooks": [{
- *         "type": "command",
- *         "command": "node /path/to/slate/dist/hooks/capture.js"
- *       }]
- *     }]
- *   }
- * }
- *
- * Claude Code 通过环境变量传递工具调用信息：
- *   CLAUDE_TOOL_NAME — 被调用的工具名
- *   CLAUDE_TOOL_INPUT — 工具输入 JSON
- *   CLAUDE_TOOL_OUTPUT — 工具输出
- *   CLAUDE_PROJECT_DIR — 项目目录
+ * 检测：
+ * 1. Write/Edit 创建了新组件 → 自动写 .slate/foundation.json
+ * 2. Bash 中 npm install → 检测新依赖，更新 dependencies.json
+ * 3. Bash 中 git push → 提示添加 slate-foundation topic
  */
 
-import { readAllProtocolFiles } from "../protocol/index.js";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { join, basename, dirname } from "node:path";
 
 function main(): void {
   const toolName = process.env.CLAUDE_TOOL_NAME || "";
-  const toolInput = process.env.CLAUDE_TOOL_INPUT || "";
-  const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const toolInput = process.env.CLAUDE_TOOL_INPUT || "{}";
+  const cwd = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
-  const signals: string[] = [];
+  let input: Record<string, unknown> = {};
+  try { input = JSON.parse(toolInput); } catch {}
 
-  // 信号1: 检测包管理器安装（可能有新依赖）
+  // ─── 信号1: 新文件 → 自动发布地基 ────────────────
+  if (toolName === "Write" || toolName === "Edit") {
+    const filePath = (input.file_path || input.filePath || "") as string;
+    if (!filePath) return;
+
+    // 判断是否是可复用组件
+    const isComponent =
+      filePath.includes("/components/") ||
+      filePath.includes("/lib/") ||
+      filePath.includes("/utils/") ||
+      filePath.match(/\.(tsx?|jsx?)$/) ||
+      filePath.includes("/src/");
+
+    if (!isComponent) return;
+
+    try {
+      const content = readFileSync(filePath, "utf-8");
+      // 检查是否导出了内容
+      const hasExports = /export (const|function|class|default|interface|type)/.test(content);
+      if (!hasExports) return;
+
+      // 自动创建地基
+      const slateDir = join(cwd, ".slate");
+      if (!existsSync(slateDir)) mkdirSync(slateDir, { recursive: true });
+
+      const name = basename(filePath, filePath.includes(".") ? filePath.split(".").slice(-1)[0] : "");
+      const dir = dirname(filePath);
+      const exports = content.match(/export (?:const|function|class) (\w+)/g)
+        ?.map(m => m.replace(/export (?:const|function|class) /, "")) || [];
+
+      // 只在新地基不存在时创建
+      const foundationPath = join(slateDir, "foundation.json");
+      if (!existsSync(foundationPath)) {
+        const foundation = {
+          architect: "auto",
+          name: name,
+          description: `Auto-captured from ${filePath}`,
+          version: "0.1.0",
+          exports,
+        };
+        writeFileSync(foundationPath, JSON.stringify(foundation, null, 2) + "\n");
+
+        // 确保 identity.json 存在
+        if (!existsSync(join(slateDir, "identity.json"))) {
+          writeFileSync(join(slateDir, "identity.json"), JSON.stringify({
+            protocol: "slate/0.1", type: "foundation",
+            owner: "auto", created: new Date().toISOString(),
+          }, null, 2) + "\n");
+        }
+      }
+    } catch { /* best effort */ }
+  }
+
+  // ─── 信号2: 安装依赖 → 检测地基 ──────────────────
   if (toolName === "Bash" || toolName === "exec") {
-    const input = toolInput.toLowerCase();
-    if (input.includes("npm install") || input.includes("yarn add") || input.includes("pnpm add") || input.includes("bun add")) {
-      // 检查是否可能是地基依赖
-      const files = readAllProtocolFiles(projectDir);
-      if (files.identity || files.intention) {
-        signals.push("tip: 检测到安装新依赖。如果来自石板地基，请用 slate_write 更新 dependencies.json");
+    const cmd = (input.command || "") as string;
+    if (cmd.includes("npm install") || cmd.includes("yarn add") || cmd.includes("bun add") || cmd.includes("pnpm add")) {
+      // 提取包名，检查是否是石板地基
+      const pkgMatch = cmd.match(/(?:install|add)\s+(?:-[-]?\w+\s+)*(@?[\w@.\-/]+)/);
+      if (pkgMatch) {
+        const pkg = pkgMatch[1].replace(/@[\d.]+$/, "");
+        const slateDir = join(cwd, ".slate");
+        const depPath = join(slateDir, "dependencies.json");
+        if (existsSync(depPath)) {
+          try {
+            const deps = JSON.parse(readFileSync(depPath, "utf-8"));
+            const exists = deps.dependencies?.some((d: any) => d.foundation_repo === `npm:${pkg}`);
+            if (!exists) {
+              if (!deps.dependencies) deps.dependencies = [];
+              deps.dependencies.push({
+                foundation_repo: `npm:${pkg}`,
+                architect: "npm",
+                ref: "latest",
+                note: `自动捕获于 ${new Date().toISOString().slice(0, 10)}`,
+              });
+              writeFileSync(depPath, JSON.stringify(deps, null, 2) + "\n");
+            }
+          } catch {}
+        }
       }
-    }
-
-    if (input.includes("git submodule add") || input.includes("git clone")) {
-      signals.push("tip: 检测到引入外部仓库。如果是石板地基，请记录到 dependencies.json。");
     }
   }
 
-  // 信号2: 检测文件写入（可能是新组件）
-  if (toolName === "Write" || toolName === "write" || toolName === "Edit") {
+  // ─── 信号3: 搜索缓存 ─────────────────────────────
+  if (toolName === "slate_search") {
+    const cacheDir = join(cwd, ".slate", "cache");
+    if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
     try {
-      const parsed = JSON.parse(toolInput);
-      const filePath = parsed.file_path || parsed.filePath || "";
-      // 检测是否是独立组件文件
-      if (
-        filePath.includes("/components/") ||
-        filePath.includes("/lib/") ||
-        filePath.includes("/utils/") ||
-        filePath.includes(".tsx") ||
-        filePath.includes(".ts")
-      ) {
-        const files = readAllProtocolFiles(projectDir);
-        if (files.identity && files.identity.type === "intention") {
-          signals.push("tip: 创建了新组件。如果它是可复用的，考虑用 slate_publish 发布为地基。");
-        }
-      }
-    } catch {
-      // 无法解析输入，跳过
-    }
-  }
-
-  // 信号3: 检测协议状态变更
-  if (toolName === "slate_write") {
-    try {
-      const parsed = JSON.parse(toolInput);
-      if (parsed.file === "intention.json") {
-        const content = parsed.content || {};
-        if (content.status) {
-          signals.push(`intention 状态流转: → ${content.status}`);
-        }
-      }
-      if (parsed.file === "dependencies.json") {
-        const content = parsed.content || {};
-        const deps = content.dependencies || [];
-        if (deps.length > 0) {
-          signals.push(`依赖记录已更新: ${deps.length} 个地基`);
-        }
-      }
-    } catch {
-      // skip
-    }
-  }
-
-  // 输出信号（通过 stderr，避免干扰工具输出）
-  if (signals.length > 0) {
-    process.stderr.write(`[石板] ${signals.join(" | ")}\n`);
+      const output = process.env.CLAUDE_TOOL_OUTPUT || "";
+      const match = output.match(/找到 (\d+) 个结果/);
+      writeFileSync(join(cacheDir, "last_search.json"), JSON.stringify({
+        query: (input.query as string) || "",
+        count: match ? parseInt(match[1]) : 0,
+        time: Date.now(),
+      }));
+    } catch {}
   }
 }
 
