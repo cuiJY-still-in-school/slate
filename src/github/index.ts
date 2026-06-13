@@ -162,7 +162,11 @@ export async function searchGlobal(
     }
   } catch (e) { /* code search 失败不影响 */ }
 
-  return [...results.values()].sort((a, b) => b.stars - a.stars).slice(0, limit);
+  // 过滤无编程语言的非代码仓库，按 stars 排序
+  return [...results.values()]
+    .filter(r => r.source === "github" ? r.stars > 0 : true) // 至少有点用
+    .sort((a, b) => b.stars - a.stars)
+    .slice(0, limit);
 }
 
 // ─── 专有逻辑：适合做什么分析 ──────────────────────
@@ -259,15 +263,19 @@ export async function enrichQuality(result: SearchResult): Promise<SearchResult>
         result.openIssues = repoData.open_issues_count as number;
         result.license = (repoData.license as { spdx_id?: string })?.spdx_id;
         result.lastCommitAt = repoData.pushed_at as string;
-        // 质量评分: stars 信号 + 维护活跃度 + issue 健康度
+        // 质量评分: stars为主 + 活跃度 + issue健康度
         const stars = result.stars || 0;
         const issues = result.openIssues || 0;
         const pushedAt = result.lastCommitAt ? Date.parse(result.lastCommitAt) : 0;
-        const daysSincePush = (Date.now() - pushedAt) / 86400000;
-        const activityScore = Math.max(0, 100 - daysSincePush * 2); // 2个月内活跃=满分
-        const issueScore = stars > 0 ? Math.max(0, 100 - (issues / stars) * 100) : 50;
-        result.qualityScore = Math.round(stars > 1000 ? 80 + Math.min(20, stars / 500) :
-          Math.round((activityScore * 0.5 + issueScore * 0.3 + Math.min(100, stars / 10) * 0.2)));
+        const daysSincePush = Math.max(0, (Date.now() - pushedAt) / 86400000);
+        // stars 得分 (0-70): 1000+ stars = 满分
+        const starScore = Math.min(70, Math.round(Math.log10(stars + 1) * 15));
+        // 活跃度 (0-20): 一周内=满分, 一年以上=0
+        const activityScore = Math.max(0, 20 - Math.round(daysSincePush / 18));
+        // 健康度 (0-10): open issues 少 = 健康
+        const issueRatio = stars > 0 ? issues / stars : 1;
+        const healthScore = Math.round(issueRatio < 0.001 ? 10 : issueRatio < 0.01 ? 7 : issueRatio < 0.1 ? 4 : 0);
+        result.qualityScore = Math.min(100, starScore + activityScore + healthScore);
       }
     }
   } catch { /* enrichment is best-effort */ }
